@@ -1,0 +1,38 @@
+  internal List<JProjectDetails> GetIssuesFromJiraParallelAsync(string username, string apiToken, string apiUrl)
+        {
+            try
+            {
+
+                //Get Issue list
+                using (var httpClient = new HttpClient())
+                using (var request = new HttpRequestMessage(new HttpMethod("GET"), apiUrl))
+                {
+                    var jiraResponse = JiraConnectionAndResponse(httpClient, request, username, apiToken);
+                    // JiraIssueResponse jsonContent = JsonConvert.DeserializeObject<JiraIssueResponse>(jiraResponse.Result);
+
+                    JiraHistoryResponse jsonContent = JsonConvert.DeserializeObject<JiraHistoryResponse>(jiraResponse.Result, new JsonSerializerSettings
+                        {
+                            MaxDepth = 2000
+                        }
+                   );
+                   }
+                   
+                   
+ public async Task<string> JiraConnectionAndResponse
+            (HttpClient httpClient, HttpRequestMessage request, string userName, string apiToken)
+        {
+
+            var base64authorization =
+                Convert.ToBase64String(Encoding.ASCII.GetBytes(userName + ":" + apiToken));
+            request.Headers.TryAddWithoutValidation("Authorization", $"Basic {base64authorization}");
+
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3;
+            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+
+            var response = await httpClient.SendAsync(request);
+            string jsonRspProjectDetails = await response.Content.ReadAsStringAsync();
+            //MessageBox.Show(jsonRspProjectDetails.ToString());
+            return jsonRspProjectDetails;
+        }
