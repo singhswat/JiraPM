@@ -1,0 +1,56 @@
+private void btnCreate_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                JiraUtilities jiraUtilities = new JiraUtilities();
+                string JsonString = jiraUtilities.JsonRequest();
+                string restUrl = null;
+                string Url = @"https://collinsisfal.atlassian.net/";
+                restUrl = String.Format("{0}rest/api/3/issue/", Url);
+
+
+
+                jiraUtilities.CreateIssueAsync(JsonString, restUrl, userName);
+
+                HttpWebResponse response = null;
+                HttpWebRequest request = WebRequest.Create(restUrl) as HttpWebRequest;
+                request.Method = "POST";
+                request.Accept = "application/json";
+                request.ContentType = "application/json";
+                request.Headers.Add("Authorization", "Basic " + GetEncodedCredentials(userName, apiToken));
+                byte[] data = Encoding.UTF8.GetBytes(JsonString);
+
+                using (var requestStream = request.GetRequestStream())
+                {
+                    requestStream.Write(data, 0, data.Length);
+                    requestStream.Close();
+                }
+
+
+
+                using (response = request.GetResponse() as HttpWebResponse)
+                {
+                    if (response.StatusCode == HttpStatusCode.Created)
+                    {
+                        var reader = new StreamReader(response.GetResponseStream());
+                        string str = reader.ReadToEnd();
+                        Console.WriteLine("The server returned '{0}'\n{1}", response.StatusCode, str);
+                        var jss = new JavaScriptSerializer();
+                        var sData = jss.Deserialize<Dictionary<string,
+                         string>>(str);
+                        string issueKey = sData["key"].ToString();
+                        MessageBox.Show("Issue created sucessfully.");
+                        //AddAttachments(issueKey);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Error returned from Server:" + response.StatusCode + " Status Description : " + response.StatusDescription);
+                    }
+                }
+                request.Abort();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Exception:" + ex.Message);
+            }
+        }
